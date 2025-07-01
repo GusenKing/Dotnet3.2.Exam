@@ -1,0 +1,21 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SagaOrchestrator", "SagaOrchestrator\SagaOrchestrator.csproj", "{3FAFB579-DE0D-4A99-AEFB-0C3E3A8B9C05}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{4CE73A27-8821-41AF-8243-E27445998EE8}"
+	ProjectSection(SolutionItems) = preProject
+		..\compose.yaml = ..\compose.yaml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3FAFB579-DE0D-4A99-AEFB-0C3E3A8B9C05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FAFB579-DE0D-4A99-AEFB-0C3E3A8B9C05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FAFB579-DE0D-4A99-AEFB-0C3E3A8B9C05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FAFB579-DE0D-4A99-AEFB-0C3E3A8B9C05}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
