@@ -1,7 +1,6 @@
-using SagaOrchestrator;
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddGrpcClient<OrderService.OrderService.OrderServiceClient>();
+builder.Services.AddGrpcClient<PaymentService.PaymentService.PaymentServiceClient>();
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
-
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+app.Run();

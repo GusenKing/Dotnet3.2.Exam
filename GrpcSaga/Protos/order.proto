@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option csharp_namespace = "OrderService";
+
+service OrderService {
+  rpc ProcessOrder (ProcessOrderRequest) returns (ProcessOrderResponse);
+}
+
+message ProcessOrderRequest {
+  string name = 1;
+}
+
+message ProcessOrderResponse {
+  string message = 1;
+}

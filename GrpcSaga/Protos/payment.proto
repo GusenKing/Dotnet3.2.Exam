@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "decimalValue.proto";
+
+package paymentGrpc;
+    
+service PaymentService {
+  rpc ProcessPayment (ProcessPaymentRequest) returns (ProcessPaymentResponse);
+}
+
+message ProcessPaymentRequest {
+  bytes OrderId = 1;
+  bytes CustomerId = 2;
+  decimalValue.DecimalValue amount = 3;
+  CardInfo cardInfo = 4;
+}
+
+message CardInfo {
+  string Number = 1;
+  string Holder = 2;
+  int32 Month = 3;
+  int32 Year = 4;
+  string SecurityCode = 5;
+}
+
+message ProcessPaymentResponse {
+  bool isSuccessful = 1;
+}
