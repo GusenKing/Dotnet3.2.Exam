@@ -41,7 +41,7 @@ public class OrderProcessingService(
             // при успехе возвращаем ранее сохраненный id order-a
             if (paymentProcessingResult.IsSuccessful)
             {
-                logger.LogInformation("Successfully created order {orderId} and confirmed payment for it", orderId);
+                logger.LogInformation("Successfully confirmed payment for order {orderId}", orderId);
                 return Results.Ok(orderId);
             }
 
@@ -78,6 +78,7 @@ public class OrderProcessingService(
                 Amount = orderInfo.TotalPrice
             }, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Created order {orderId}. Waiting for payment confirmation", newOrder.Entity.Id);
             return newOrder.Entity.Id;
         }
         catch (Exception e)
