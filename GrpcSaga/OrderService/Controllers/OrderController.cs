@@ -9,6 +9,7 @@ namespace OrderService.Controllers;
 public class OrderController(IProductsService productsService, IOrderProcessingService orderProcessingService)
     : ControllerBase
 {
+    // вспомогательный эндпоинт для удобства, чтобы брать id product-ов и следить за quantity
     [HttpGet]
     [Route("/products")]
     public async Task<IResult> GetProducts()

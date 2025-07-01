@@ -14,7 +14,10 @@ public class PaymentService(
     public override async Task<ProcessPaymentResponse> ProcessPayment(ProcessPaymentRequest request,
         ServerCallContext context)
     {
+        // имитация проверка платежа
         var confirmationResult = await paymentConfirmationService.ConfirmPaymentAsync(request.CardInfo);
+        logger.LogInformation("Payment for order {orderId} {confirmationResult}",
+            new Guid(request.OrderId.ToByteArray()), confirmationResult ? "is confirmed" : "couldn't be confirmed");
 
         await dbContext.AddAsync(new Payment
         {

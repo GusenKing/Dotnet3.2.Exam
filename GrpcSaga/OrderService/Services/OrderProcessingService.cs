@@ -7,6 +7,7 @@ using PaymentGrpc;
 
 namespace OrderService.Services;
 
+// сервис оркестрирующий сагу 
 public class OrderProcessingService(
     ILogger<OrderProcessingService> logger,
     AppDbContext dbContext,
@@ -15,30 +16,45 @@ public class OrderProcessingService(
     public async Task<IResult> ProcessOrderAndEnsurePayment(OrderRequest request,
         CancellationToken cancellationToken = default)
     {
+        // выполняется попытка создать и сохранить order
         var orderProcessingResult = await ProcessOrderAsync(request.OrderInfo, cancellationToken);
         if (orderProcessingResult == null) return Results.BadRequest("Requested product is not available");
 
+        // при успехе по grpc вызывается микросервис PaymentService на обработку платежа
         var orderId = orderProcessingResult.Value;
-        var paymentProcessingResult = await paymentServiceClient.ProcessPaymentAsync(new ProcessPaymentRequest
+        try
         {
-            OrderId = ByteString.CopyFrom(orderId.ToByteArray()),
-            Amount = request.OrderInfo.Amount,
-            CardInfo = new CardInfo
+            var paymentProcessingResult = await paymentServiceClient.ProcessPaymentAsync(new ProcessPaymentRequest
             {
-                Number = request.PaymentInfo.Number,
-                Holder = request.PaymentInfo.Holder,
-                Month = request.PaymentInfo.Month,
-                Year = request.PaymentInfo.Year,
-                SecurityCode = request.PaymentInfo.SecurityCode
-            },
-            CustomerId = ByteString.CopyFrom(request.OrderInfo.UserId.ToByteArray())
-        }, cancellationToken: cancellationToken);
+                OrderId = ByteString.CopyFrom(orderId.ToByteArray()),
+                Amount = request.OrderInfo.TotalPrice,
+                CardInfo = new CardInfo
+                {
+                    Number = request.PaymentInfo.Number,
+                    Holder = request.PaymentInfo.Holder,
+                    Month = request.PaymentInfo.Month,
+                    Year = request.PaymentInfo.Year,
+                    SecurityCode = request.PaymentInfo.SecurityCode
+                },
+                CustomerId = ByteString.CopyFrom(request.OrderInfo.UserId.ToByteArray())
+            }, cancellationToken: cancellationToken);
+            // при успехе возвращаем ранее сохраненный id order-a
+            if (paymentProcessingResult.IsSuccessful)
+            {
+                logger.LogInformation("Successfully created order {orderId} and confirmed payment for it", orderId);
+                return Results.Ok(orderId);
+            }
 
-        if (paymentProcessingResult.IsSuccessful)
-            return Results.Ok(orderId);
-
-        await OrderProcessingRollbackAsync(orderId, cancellationToken);
-        return Results.Problem("Payment was cancelled or could not be processed");
+            // при каком-либо отказе другого микросервиса выполняем откат
+            await OrderProcessingRollbackAsync(orderId, cancellationToken);
+            return Results.Problem("Payment was cancelled");
+        }
+        catch (Exception e)
+        {
+            await OrderProcessingRollbackAsync(orderId, cancellationToken);
+            logger.LogError("Error processing order: {errorMessage}", e.Message);
+            return Results.Problem("Payment could not be processed");
+        }
     }
 
     private async Task<Guid?> ProcessOrderAsync(OrderInfoDto orderInfo, CancellationToken cancellationToken = default)
@@ -59,7 +75,7 @@ public class OrderProcessingService(
                 CustomerId = orderInfo.UserId,
                 ProductId = orderInfo.ProductId,
                 OrderDate = DateTime.UtcNow,
-                Amount = orderInfo.Amount
+                Amount = orderInfo.TotalPrice
             }, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             return newOrder.Entity.Id;
@@ -83,9 +99,12 @@ public class OrderProcessingService(
             return;
         }
 
+        // оставляем запись о заказе, но выставляем IsCancelled, поясняя что заказ был отменён по какой-то причине
         savedOrder.IsCancelled = true;
+        // отменяем уменьшение количества продуктов в стоке
         affectedProduct!.ProductQuantity += 1;
 
+        logger.LogInformation("Order {orderId} was cancelled", orderId);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }
