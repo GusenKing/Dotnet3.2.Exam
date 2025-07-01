@@ -21,7 +21,7 @@ public class PaymentService(
             OrderId = new Guid(request.OrderId.ToByteArray()),
             CustomerId = new Guid(request.CustomerId.ToByteArray()),
             Amount = request.Amount,
-            Date = DateTime.Now,
+            Date = DateTime.UtcNow,
             Status = confirmationResult ? PaymentStatus.Confirmed : PaymentStatus.Cancelled
         });
         await dbContext.SaveChangesAsync();
